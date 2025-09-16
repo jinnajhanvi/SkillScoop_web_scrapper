@@ -1,0 +1,143 @@
+# -*- coding: utf-8 -*-
+"""SkillScoop_web_scrapper.ipynb
+
+Web Scraper for TimesJobs job postings.
+Extracts details like Company, Skills, Location, Experience, Salary, and Duration,
+and saves them into a CSV file.
+"""
+
+# Install necessary libraries (if not already installed in your environment)
+# !pip install requests
+# !pip install beautifulsoup4
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+
+# ---------------------------
+# Function to scrape jobs
+# ---------------------------
+def job_finder():
+    # Take user input for job title or skills
+    key = input("Enter your skills or designation: ").strip()
+
+    # Replace spaces with %20 for valid URL encoding
+    key_url = key.replace(" ", "%20")
+
+    # Construct TimesJobs search URL dynamically
+    url = (
+        "https://www.timesjobs.com/candidate/job-search.html?"
+        "searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText="
+        f"&txtKeywords={key_url}&txtLocation="
+    )
+
+    # Send GET request to the website
+    response = requests.get(url)
+
+    # Parse the HTML content with BeautifulSoup
+    soup = BeautifulSoup(response.text, "lxml")
+
+    # Find all job listings on the page
+    jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')
+
+    # Empty lists to hold extracted data
+    company_names = []
+    skills_list = []
+    locations = []
+    experiences = []
+    salaries = []
+    durations = []
+
+    # If no jobs are found, print first part of HTML to debug selectors
+    if not jobs:
+        print("No jobs found with the current selectors. Let's inspect the HTML:")
+        print(soup.prettify()[:2000])  # Print first 2000 characters of HTML
+        return {
+            "Company Name": [],
+            "Skills": [],
+            "Location": [],
+            "Experience": [],
+            "Salary": [],
+            "Duration": []
+        }
+
+    # ---------------------------
+    # Loop through each job and extract details
+    # ---------------------------
+    for job in jobs:
+        # ---- COMPANY NAME ----
+        company_tag = job.find('h3', class_='joblist-comp-name')
+        if company_tag:
+            comp_text = company_tag.get_text(strip=True)
+            comp_text = ' '.join(comp_text.split())  # Clean extra spaces
+        else:
+            comp_text = "N/A"
+        company_names.append(comp_text)
+
+        # ---- SKILLS REQUIRED ----
+        skills_div = job.find('div', class_='srp-skills')
+        if skills_div:
+            # Find all visible skills (ignores hidden "nodisplay" tags)
+            skill_spans = skills_div.find_all('span', class_=False)
+            all_skills = [sp.get_text(strip=True) for sp in skill_spans]
+            skills_text = ', '.join(all_skills)
+        else:
+            skills_text = "N/A"
+        skills_list.append(skills_text)
+
+        # ---- LOCATION ----
+        loc_tag = job.find('li', class_='srp-zindex location-tru')
+        loc_text = loc_tag.get_text(strip=True) if loc_tag else "N/A"
+        locations.append(loc_text)
+
+        # ---- EXPERIENCE ----
+        exp_text = "N/A"
+        li_tags = job.find_all('li')
+        for li in li_tags:
+            if li.find('i', class_='srp-icons experience'):
+                exp_text = li.get_text(strip=True)
+                break
+        experiences.append(exp_text)
+
+        # ---- SALARY ----
+        salary_text = "N/A"
+        for li in li_tags:
+            if li.find('i', class_='srp-icons salary'):
+                salary_text = li.get_text(strip=True)
+                break
+        salaries.append(salary_text)
+
+        # ---- DURATION (when posted) ----
+        duration_tag = job.find('span', class_='sim-posted')
+        duration_text = duration_tag.get_text(strip=True) if duration_tag else "N/A"
+        durations.append(duration_text)
+
+    # Combine all extracted lists into a dictionary
+    result = {
+        "Company Name": company_names,
+        "Skills": skills_list,
+        "Location": locations,
+        "Experience": experiences,
+        "Salary": salaries,
+        "Duration": durations
+    }
+
+    print(f"✅ Extracted {len(company_names)} job postings.")
+    return result
+
+
+# ---------------------------
+# Run the scraper
+# ---------------------------
+data = job_finder()
+
+# Convert extracted dictionary to Pandas DataFrame
+df = pd.DataFrame(data)
+
+# Show first few rows
+print(df.head())
+
+# Save results into CSV file
+df.to_csv("python_developer_jobs.csv", index=False)
+print("📁 Data saved to python_developer_jobs.csv")
