@@ -50,6 +50,7 @@ SkillScoop_jobs.csv
 Company Name	Skills	Location	Experience	Salary	Duration
 ABC Pvt Ltd	Python, Django, SQL	Bangalore	2-5 yrs	6 LPA	Posted 3 days ago
 XYZ Solutions	Python, Machine Learning	Hyderabad	0-2 yrs	N/A	Posted 1 day ago
+
 🎯 Use Cases
 
 👩‍💻 Job Seekers – Quickly find relevant opportunities.
@@ -58,8 +59,5 @@ XYZ Solutions	Python, Machine Learning	Hyderabad	0-2 yrs	N/A	Posted 1 day ago
 
 🎓 Students – Learn web scraping, data cleaning, and CSV handling in Python.
 
-📜 License
-
-This project is open-source and available under the MIT License.
 
 ⚡ SkillScoop Web Scrapper – Scoop out the skills, land the job! ⚡
